@@ -1,15 +1,15 @@
 import shutil
 import tempfile
 
+from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, override_settings, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django import forms
 
-from ..models import Group, Post
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -21,6 +21,7 @@ class PostPagesTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='mario')
+        cls.another_user = User.objects.create_user(username='supermario')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -56,6 +57,7 @@ class PostPagesTests(TestCase):
         cls.post_edit_url = reverse('posts:post_edit',
                                     kwargs={'post_id': cls.post.id})
         cls.post_create_url = reverse('posts:post_create')
+        cls.follow_url = reverse('posts:follow_index')
 
     @classmethod
     def tearDownClass(cls):
@@ -66,7 +68,10 @@ class PostPagesTests(TestCase):
         cache.clear()
 
         self.authorized_client = Client()
-        self.authorized_client.force_login(PostPagesTests.user)
+        self.authorized_client.force_login(self.user)
+
+        self.another_authorized_client = Client()
+        self.another_authorized_client.force_login(self.another_user)
 
     def test_pages_uses_correct_template(self):
         """Views использует правильные шаблоны."""
@@ -169,6 +174,34 @@ class PostPagesTests(TestCase):
 
         self.assertNotIn(self.post, response.context['page_obj'])
 
+    def test_follow_unfollow_works_for_authorized(self):
+        """Подписка и отписка работают."""
+        Follow.objects.create(user=self.another_user, author=self.user)
+        follow_true = Follow.objects.filter(user=self.another_user,
+                                            author=self.user).count()
+        Follow.objects.filter(user=self.another_user,
+                              author=self.user).delete()
+        follow_false = Follow.objects.filter(user=self.another_user,
+                                             author=self.user).count()
+
+        self.assertEqual(follow_true, 1)
+        self.assertEqual(follow_false, 0)
+
+    def test_follower_has_post(self):
+        """Пост появляется в ленте у подписчика."""
+        Follow.objects.create(user=self.another_user, author=self.user)
+
+        response = self.another_authorized_client.get(self.follow_url)
+
+        self.assertEqual(response.context['page_obj'].object_list[0],
+                         self.post)
+
+    def test_antifollower_doesnt_have_post(self):
+        """Пост не появляется в ленте у того, кто не подписан."""
+        response = self.another_authorized_client.get(self.follow_url)
+
+        self.assertNotIn(self.post, response.context['page_obj'])
+
 
 class PostPaginatorTests(TestCase):
     @classmethod
@@ -230,7 +263,7 @@ class IndexPageCacheTest(TestCase):
         )
         cls.authorized_client = Client()
 
-    def test_index_page_cahe(self):
+    def test_index_page_cache(self):
         """Тестируем кэш."""
         cache.clear()
         post = Post.objects.create(
@@ -239,18 +272,18 @@ class IndexPageCacheTest(TestCase):
             group=self.group
         )
 
-        response_before = self.authorized_client.\
-            get(reverse('posts:index')).content
+        response_before = (self.authorized_client.
+                           get(reverse('posts:index')).content)
 
         post.delete()
 
-        response_during = self.authorized_client.\
-            get(reverse('posts:index')).content
+        response_during = (self.authorized_client.
+                           get(reverse('posts:index')).content)
 
         cache.clear()
 
-        response_after = self.authorized_client.\
-            get(reverse('posts:index')).content
+        response_after = (self.authorized_client.
+                          get(reverse('posts:index')).content)
 
         self.assertEqual(response_before, response_during)
         self.assertNotEqual(response_during, response_after)
