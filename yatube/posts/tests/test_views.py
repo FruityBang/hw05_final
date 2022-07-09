@@ -174,18 +174,27 @@ class PostPagesTests(TestCase):
 
         self.assertNotIn(self.post, response.context['page_obj'])
 
+    def test_follow_works_for_authorized(self):
+        """Подписка и отписка работают."""
+        follow_before = Follow.objects.filter(user=self.another_user,
+                                              author=self.user).count()
+        Follow.objects.create(user=self.another_user, author=self.user)
+        follow_after = Follow.objects.filter(user=self.another_user,
+                                             author=self.user).count()
+
+        self.assertEqual(follow_after - follow_before, 1)
+
     def test_follow_unfollow_works_for_authorized(self):
         """Подписка и отписка работают."""
         Follow.objects.create(user=self.another_user, author=self.user)
-        follow_true = Follow.objects.filter(user=self.another_user,
-                                            author=self.user).count()
+        follow_before = Follow.objects.filter(user=self.another_user,
+                                              author=self.user).count()
         Follow.objects.filter(user=self.another_user,
                               author=self.user).delete()
-        follow_false = Follow.objects.filter(user=self.another_user,
+        follow_after = Follow.objects.filter(user=self.another_user,
                                              author=self.user).count()
 
-        self.assertEqual(follow_true, 1)
-        self.assertEqual(follow_false, 0)
+        self.assertEqual(follow_before - follow_after, 1)
 
     def test_follower_has_post(self):
         """Пост появляется в ленте у подписчика."""
@@ -271,19 +280,20 @@ class IndexPageCacheTest(TestCase):
             text='тест',
             group=self.group
         )
-
-        response_before = (self.authorized_client.
-                           get(reverse('posts:index')).content)
+        response = self.authorized_client.get(reverse('posts:index'))
+        content_before = (self.authorized_client.
+                          get(reverse('posts:index')).content)
 
         post.delete()
 
-        response_during = (self.authorized_client.
-                           get(reverse('posts:index')).content)
+        content_during = (self.authorized_client.
+                          get(reverse('posts:index')).content)
 
         cache.clear()
 
-        response_after = (self.authorized_client.
-                          get(reverse('posts:index')).content)
+        content_after = (self.authorized_client.
+                         get(reverse('posts:index')).content)
 
-        self.assertEqual(response_before, response_during)
-        self.assertNotEqual(response_during, response_after)
+        self.assertEqual(content_before, content_during)
+        self.assertNotEqual(content_during, content_after)
+        self.assertNotIn(post, response.context['page_obj'])

@@ -26,18 +26,13 @@ class PostURLTests(TestCase):
             group=cls.group
         )
 
-        cls.index_url = reverse('posts:index')
-        cls.group_posts_url = reverse('posts:group_posts',
-                                      kwargs={'slug': cls.group.slug})
-        cls.profile_url = reverse('posts:profile',
-                                  kwargs={'username': cls.user})
-        cls.post_detail_url = reverse('posts:post_detail',
-                                      kwargs={'post_id': cls.post.id})
-        cls.post_edit_url = reverse('posts:post_edit',
-                                    kwargs={'post_id': cls.post.id})
-        cls.post_create_url = reverse('posts:post_create')
-        cls.post_comment_url = reverse('posts:add_comment',
-                                       kwargs={'post_id': cls.post.id})
+        cls.index_url = '/'
+        cls.group_posts_url = '/group/test-slug/'
+        cls.profile_url = '/profile/mario/'
+        cls.post_detail_url = '/posts/1/'
+        cls.post_edit_url = '/posts/1/edit/'
+        cls.post_create_url = '/create/'
+        cls.post_comment_url = '/posts/1/comment/'
 
     def setUp(self):
         cache.clear()
@@ -51,7 +46,7 @@ class PostURLTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
 
-    def test_posts_create_redirect(self):
+    def test_posts_edit_redirect(self):
         """Запрос post_edit перенаправляет не автора поста на post_detail."""
         client_list = (self.guest_client, self.authorized_not_author)
 
@@ -59,7 +54,7 @@ class PostURLTests(TestCase):
             with self.subTest(client=client):
                 response = (self.client.
                             get(self.post_edit_url))
-                self.assertRedirects(response, self.post_detail_url)
+                self.assertRedirects(response, '/auth/login/?next=/posts/1/edit/')
 
     def test_posts_create_not_exists_anonymous(self):
         """Создание поста недоступно для незарегистрированного пользователя."""
