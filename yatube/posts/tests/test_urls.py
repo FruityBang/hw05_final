@@ -3,7 +3,6 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import Client, TestCase
-from django.urls import reverse
 
 from ..models import Group, Post
 
@@ -54,7 +53,8 @@ class PostURLTests(TestCase):
             with self.subTest(client=client):
                 response = (self.client.
                             get(self.post_edit_url))
-                self.assertRedirects(response, '/auth/login/?next=/posts/1/edit/')
+                self.assertRedirects(response,
+                                     '/auth/login/?next=/posts/1/edit/')
 
     def test_posts_create_not_exists_anonymous(self):
         """Создание поста недоступно для незарегистрированного пользователя."""
