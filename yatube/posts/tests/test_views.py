@@ -57,12 +57,16 @@ class PostPagesTests(TestCase):
         cls.post_edit_url = reverse('posts:post_edit',
                                     kwargs={'post_id': cls.post.id})
         cls.post_create_url = reverse('posts:post_create')
-        cls.follow_url = reverse('posts:follow_index')
+        cls.follow_index_url = reverse('posts:follow_index')
+        cls.to_follow_url = reverse('posts:profile_follow',
+                                    kwargs={'username': cls.user})
+        cls.to_unfollow_url = reverse('posts:profile_unfollow',
+                                      kwargs={'username': cls.user})
 
     @classmethod
     def tearDownClass(cls):
-        super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         cache.clear()
@@ -175,22 +179,21 @@ class PostPagesTests(TestCase):
         self.assertNotIn(self.post, response.context['page_obj'])
 
     def test_follow_works_for_authorized(self):
-        """Подписка и отписка работают."""
+        """Проверка работоспособности подписки."""
         follow_before = Follow.objects.filter(user=self.another_user,
                                               author=self.user).count()
-        Follow.objects.create(user=self.another_user, author=self.user)
+        self.another_authorized_client.get(self.to_follow_url)
         follow_after = Follow.objects.filter(user=self.another_user,
                                              author=self.user).count()
 
         self.assertEqual(follow_after - follow_before, 1)
 
-    def test_follow_unfollow_works_for_authorized(self):
-        """Подписка и отписка работают."""
-        Follow.objects.create(user=self.another_user, author=self.user)
+    def test_unfollow_works_for_authorized(self):
+        """Проверка работоспособности отписки."""
+        self.another_authorized_client.get(self.to_follow_url)
         follow_before = Follow.objects.filter(user=self.another_user,
                                               author=self.user).count()
-        Follow.objects.filter(user=self.another_user,
-                              author=self.user).delete()
+        self.another_authorized_client.get(self.to_unfollow_url)
         follow_after = Follow.objects.filter(user=self.another_user,
                                              author=self.user).count()
 
@@ -200,14 +203,14 @@ class PostPagesTests(TestCase):
         """Пост появляется в ленте у подписчика."""
         Follow.objects.create(user=self.another_user, author=self.user)
 
-        response = self.another_authorized_client.get(self.follow_url)
+        response = self.another_authorized_client.get(self.follow_index_url)
 
         self.assertEqual(response.context['page_obj'].object_list[0],
                          self.post)
 
     def test_antifollower_doesnt_have_post(self):
         """Пост не появляется в ленте у того, кто не подписан."""
-        response = self.another_authorized_client.get(self.follow_url)
+        response = self.another_authorized_client.get(self.follow_index_url)
 
         self.assertNotIn(self.post, response.context['page_obj'])
 
@@ -239,8 +242,7 @@ class PostPaginatorTests(TestCase):
     def test_first_page_ten_posts(self):
         """Проверка первой страницы Paginator."""
         pages_for_test = (
-            self.index_url, self.group_posts_url, self.profile_url
-        )
+            self.index_url, self.group_posts_url, self.profile_url)
 
         for page in pages_for_test:
             response = self.client.get(page)
