@@ -187,6 +187,8 @@ class PostPagesTests(TestCase):
                                              author=self.user).count()
 
         self.assertEqual(follow_after - follow_before, 1)
+        self.assertTrue(Follow.objects.filter(user=self.another_user,
+                                              author=self.user).exists())
 
     def test_unfollow_works_for_authorized(self):
         """Проверка работоспособности отписки."""
@@ -198,6 +200,8 @@ class PostPagesTests(TestCase):
                                              author=self.user).count()
 
         self.assertEqual(follow_before - follow_after, 1)
+        self.assertFalse(Follow.objects.filter(user=self.another_user,
+                                               author=self.user).exists())
 
     def test_follower_has_post(self):
         """Пост появляется в ленте у подписчика."""
