@@ -1,32 +1,39 @@
-Проект API Yatube - все для общения через API. Связываем людей, связываем жизни.
+**Проект Yatube - соц.сеть для ведения блогов и общения.**
+
+**Реализована возможность публикации постов с изображениями, подписки на пользователей с
+использованием пользовательского интерфейса (HTML, CSS). Регистрация доступна на основе
+Generic Views. Написаны тесты (Unittest, TDD).**
+
 
 Как запустить проект:
 
-Клонировать репозиторий и перейти в него в командной строке:
+- Клонировать репозиторий и перейти в него в командной строке:
 
-git clone git@github.com:FruityBang/api_final_yatube.git
+  git clone git@github.com:FruityBang/hw05_final.git
 
-cd api_final_yatube
+  cd hw05_final/
 
-Cоздать и активировать виртуальное окружение:
+- Cоздать и активировать виртуальное окружение:
 
-python3 -m venv env
+  python -m venv venv
 
-source env/bin/activate
+  source venv/Scripts/activate (Windows)
+  source venv/bin/activate (Linux)
 
-Установить зависимости из файла requirements.txt:
+- Установить зависимости из файла requirements.txt:
 
-python3 -m pip install --upgrade pip
+  python -m pip install --upgrade pip
 
-pip install -r requirements.txt
+  pip install -r requirements.txt
 
-Выполнить миграции:
+- Выполнить миграции:
+  cd yatube/
 
-python3 manage.py migrate
+  python manage.py migrate
 
-Запустить проект:
+- Запустить проект:
 
-python3 manage.py runserver
+  python manage.py runserver
 
 Примеры.
 
