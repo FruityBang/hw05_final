@@ -35,22 +35,16 @@ Generic Views. Написаны тесты (Unittest, TDD).**
 
   python manage.py runserver
 
-Примеры.
+***Доступные эндпоинты:***
 
-Доступные эндпоинты:
+http://127.0.0.1:8000/
 
-http://127.0.0.1:8000/api/v1/posts/
+http://127.0.0.1:8000/admin/
 
-http://127.0.0.1:8000/api/v1/groups/
+http://127.0.0.1:8000/about/
 
-http://127.0.0.1:8000/api/v1/follow/
+http://127.0.0.1:8000/auth/
 
-http://127.0.0.1:8000/api/v1/jwt/
+http://127.0.0.1:8000/group/slug/
 
-Запросы:
-
-POST http://127.0.0.1:8000/api/v1/posts/ { "text": "string", "image": "string", "group": 0 }
-
-POST http://127.0.0.1:8000/api/v1/posts/{post_id}/comments/ { "text": "string" }
-
-POST http://127.0.0.1:8000/api/v1/follow/ { "following": "string" }
+http://127.0.0.1:8000/posts/post_id/
